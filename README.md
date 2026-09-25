@@ -5,11 +5,11 @@ frontend agents must follow, and `api/README.md` for the endpoints this wraps.
 
 ## Install
 
-This package lives in its own repo (`github.com/limeloop/-plan-sdk`), separate from the api's
+This package lives in its own repo (`github.com/limeloop/plan-sdk`), separate from the api's
 repo. Not published to a registry: install directly from git.
 
 ```json
-{ "dependencies": { "@yourco/sdk": "github:limeloop/-plan-sdk#main" } }
+{ "dependencies": { "@yourco/sdk": "github:limeloop/plan-sdk#main" } }
 ```
 
 For local development against an unreleased api change, a path dependency still works if both
