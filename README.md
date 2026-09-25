@@ -5,18 +5,30 @@ frontend agents must follow, and `api/README.md` for the endpoints this wraps.
 
 ## Install
 
-Not published yet: install from a path until the api settles (per `CLAUDE.md` Step 6).
+This package lives in its own repo (`github.com/limeloop/-plan-sdk`), separate from the api's
+repo. Not published to a registry: install directly from git.
+
+```json
+{ "dependencies": { "@yourco/sdk": "github:limeloop/-plan-sdk#main" } }
+```
+
+For local development against an unreleased api change, a path dependency still works if both
+repos are checked out side by side:
 
 ```json
 { "dependencies": { "@yourco/sdk": "file:../platform/sdk" } }
 ```
 
-After changing anything under `api/src/http/`, regenerate the committed types:
+After changing anything under `api/src/http/` in the `platform` repo, regenerate the committed
+types here (this needs a local checkout of `platform` next to this repo, since `openapi.json`
+isn't published anywhere):
 
 ```sh
-npm run generate:types   # api/openapi.json -> src/generated-types.ts
+npm run generate:types   # ../platform/api/openapi.json -> src/generated-types.ts
 npm run build
 ```
+
+Then commit and push the updated `src/generated-types.ts` in this repo.
 
 ## What's in 0.1
 

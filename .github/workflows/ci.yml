@@ -1,0 +1,16 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      # src/generated-types.ts is generated from the platform repo's api/openapi.json and
+      # committed here manually (see README's "Install" section) - no drift check possible
+      # in this repo alone, since openapi.json isn't published anywhere.
