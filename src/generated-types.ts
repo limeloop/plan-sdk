@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/config": {
         parameters: {
             query?: never;
@@ -216,6 +232,15 @@ export interface components {
              */
             issuer: string;
         };
+        AuthLoginBody: {
+            email: string;
+            password: string;
+            /**
+             * @description Must be one of the client's registered redirect URIs. Never
+             *     navigated to: Rauthy only checks it against that list.
+             */
+            redirect_uri: string;
+        };
         CategoryView: {
             color?: string | null;
             icon?: string | null;
@@ -234,6 +259,13 @@ export interface components {
             vocabulary: {
                 [key: string]: components["schemas"]["WordView"];
             };
+        };
+        LoginView: {
+            access_token: string;
+            /** Format: int64 */
+            expires_in: number;
+            id_token?: string | null;
+            refresh_token?: string | null;
         };
         MePerson: {
             email?: string | null;
@@ -444,6 +476,51 @@ export interface operations {
             };
             /** @description Missing or wrong x-publishable-key */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sign-in is not configured on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthLoginBody"];
+            };
+        };
+        responses: {
+            /** @description Signed in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginView"];
+                };
+            };
+            /** @description Incorrect email or password, or missing/wrong x-publishable-key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This account needs a sign-in step this endpoint does not support (MFA, ToS, password reset) */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

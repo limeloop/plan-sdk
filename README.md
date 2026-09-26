@@ -30,13 +30,68 @@ npm run build
 
 Then commit and push the updated `src/generated-types.ts` in this repo.
 
-## What's in 0.1
+## Sign-in
 
-Exactly the endpoints in `api/README.md`'s table: sign-in (PKCE, redirect and popup, refresh),
-`me`, `config`, `units`, `people`, `work-items` (list/get/create/update), `teams`
-(list/get/create/add-member/remove-member), and the typed errors in `src/errors.ts`.
+Wrap the app once with `ApiProvider`, then use `api.auth` and the `@yourco/sdk/react` hooks
+everywhere else. Never call Rauthy or the api's `/auth/*` routes directly.
 
-## What's NOT in 0.1
+```tsx
+import { createClient } from '@yourco/sdk';
+import { ApiProvider } from '@yourco/sdk/react';
+
+const api = createClient({
+  url: 'https://api.client.example',
+  publishableKey: 'pk_client_xxxxxxxx',
+});
+
+<ApiProvider client={api}>
+  <App />
+</ApiProvider>;
+```
+
+**Your own login form (recommended):** `signInWithPassword` posts straight to the api, which
+drives Rauthy's session/pow/authorize/token exchange server-side. Rauthy's hosted login page is
+never shown; the person never leaves your app.
+
+```ts
+try {
+  await api.auth.signInWithPassword({ email, password });
+} catch (e) {
+  // WrongCredentialsError-shaped message, safe to show as-is: "Incorrect email or password."
+  setError(e instanceof Error ? e.message : String(e));
+}
+```
+
+This only supports plain password accounts today: an account with MFA, an unaccepted ToS, or an
+expired password throws instead of silently falling back. There is no separate error type for
+that yet - check the message, or steer affected accounts to `signIn()` below until it's added.
+
+**Rauthy's own hosted page (redirect or popup):** still there for account recovery or MFA flows,
+or if you'd rather not build a login form at all.
+
+```ts
+await api.auth.signIn({ mode: 'popup' }); // or signIn() for a full-page redirect
+```
+
+A popup sign-in resolves in place; a redirect sign-in needs a `/auth/callback` route rendering
+`<AuthCallback />` from `@yourco/sdk/react` (handles both modes automatically).
+
+**Reading and clearing the session:**
+
+```ts
+useSession();     // Session | null, live - updates on sign-in, sign-out, refresh
+useMe();          // the signed-in person, their units, and what they may do
+api.auth.signOut();
+```
+
+## What's in 0.2
+
+Exactly the endpoints in `api/README.md`'s table: sign-in (PKCE redirect/popup, password via
+`api.auth.signInWithPassword` - proxied through the api so Rauthy's hosted page is never
+shown, refresh), `me`, `config`, `units`, `people`, `work-items` (list/get/create/update),
+`teams` (list/get/create/add-member/remove-member), and the typed errors in `src/errors.ts`.
+
+## What's NOT in 0.2
 
 `skill/agent-knowledge.md` describes the full intended shape of this SDK, including realtime
 updates, presence, file attachments, shares and notifications. None of that exists in the api

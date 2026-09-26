@@ -194,6 +194,43 @@ export class AuthController {
     this.setSession(session);
   }
 
+  /**
+   * Sign in with an email and password, rendered entirely in your own UI:
+   * Rauthy's hosted login page is never shown. The api proxies the actual
+   * exchange with Rauthy server-side (see `POST /auth/login`), so this is a
+   * single request, not a redirect.
+   */
+  async signInWithPassword(credentials: { email: string; password: string }): Promise<void> {
+    const body = await request<{
+      access_token: string;
+      refresh_token?: string | null;
+      id_token?: string | null;
+      expires_in: number;
+    }>(
+      {
+        baseUrl: this.config.baseUrl,
+        publishableKey: this.config.publishableKey,
+        getAccessToken: async () => null,
+      },
+      '/auth/login',
+      {
+        method: 'POST',
+        anonymous: true,
+        body: {
+          email: credentials.email,
+          password: credentials.password,
+          redirect_uri: this.redirectUri(),
+        },
+      },
+    );
+    this.setSession({
+      accessToken: body.access_token,
+      refreshToken: body.refresh_token ?? undefined,
+      idToken: body.id_token ?? undefined,
+      expiresAt: Date.now() + body.expires_in * 1000,
+    });
+  }
+
   async signOut(): Promise<void> {
     const session = this.session;
     this.setSession(null);

@@ -28,6 +28,8 @@ export interface CreateClientOptions {
 
 export interface AuthApi {
   signIn(options?: SignInOptions): Promise<void>;
+  /** Your own login form, never Rauthy's hosted page: see `docs/design-core-and-messaging.md`. */
+  signInWithPassword(credentials: { email: string; password: string }): Promise<void>;
   signOut(): Promise<void>;
   /** Call from the `/auth/callback` route after a redirect sign-in lands. */
   handleRedirectCallback(url?: string | URL): Promise<{ returnTo?: string }>;
@@ -78,6 +80,7 @@ export function createClient(options: CreateClientOptions): ApiClient {
   return {
     auth: {
       signIn: (o) => auth.signIn(o),
+      signInWithPassword: (credentials) => auth.signInWithPassword(credentials),
       signOut: () => auth.signOut(),
       handleRedirectCallback: (url) => auth.handleRedirectCallback(url),
       getSession: () => auth.getSession(),
