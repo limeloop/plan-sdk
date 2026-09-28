@@ -1,6 +1,8 @@
 import { AuthController, type SignInOptions } from './auth/controller.js';
 import type { Session } from './auth/session.js';
 import { request } from './http.js';
+import { RealtimeClient } from './realtime/client.js';
+import type { RealtimeConnectionState, RealtimeEvent } from './realtime/protocol.js';
 import type {
   Category,
   Config,
@@ -37,8 +39,17 @@ export interface AuthApi {
   subscribe(listener: (session: Session | null) => void): () => void;
 }
 
+export interface RealtimeApi {
+  subscribe(channel: string, listener: (event: RealtimeEvent) => void): () => void;
+  connect(): Promise<void>;
+  disconnect(): void;
+  getState(): RealtimeConnectionState;
+  subscribeState(listener: (state: RealtimeConnectionState) => void): () => void;
+}
+
 export interface ApiClient {
   auth: AuthApi;
+  realtime: RealtimeApi;
   me(): Promise<Me>;
   config(): Promise<Config>;
   units: {
@@ -76,6 +87,15 @@ export function createClient(options: CreateClientOptions): ApiClient {
     publishableKey: options.publishableKey,
     getAccessToken: () => auth.getAccessToken(),
   };
+  const realtime = new RealtimeClient({
+    baseUrl: options.url,
+    publishableKey: options.publishableKey,
+    getAccessToken: () => auth.getAccessToken(),
+  });
+  auth.subscribe((session) => {
+    if (session) realtime.refreshAuthentication();
+    else realtime.disconnect();
+  });
 
   return {
     auth: {
@@ -85,6 +105,13 @@ export function createClient(options: CreateClientOptions): ApiClient {
       handleRedirectCallback: (url) => auth.handleRedirectCallback(url),
       getSession: () => auth.getSession(),
       subscribe: (listener) => auth.subscribe(listener),
+    },
+    realtime: {
+      subscribe: (channel, listener) => realtime.subscribe(channel, listener),
+      connect: () => realtime.connect(),
+      disconnect: () => realtime.disconnect(),
+      getState: () => realtime.getState(),
+      subscribeState: (listener) => realtime.subscribeState(listener),
     },
     me: () => request(http, '/me'),
     config: () => request(http, '/config'),

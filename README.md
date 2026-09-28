@@ -84,21 +84,49 @@ useMe();          // the signed-in person, their units, and what they may do
 api.auth.signOut();
 ```
 
+## Realtime
+
+`api.realtime` shares one authenticated browser WebSocket for all requested channels. It receives
+metadata-only signals; use them to refetch through the normal SDK queries, never as row data.
+
+```tsx
+import {useRealtimeChannel, useRealtimeQueryInvalidation} from '@yourco/sdk/react';
+
+function Board({unitId}: {unitId: string}) {
+  const channel = `unit:${unitId}`;
+  useRealtimeQueryInvalidation([channel]);
+  const {presence, lastSignal, denied} = useRealtimeChannel(channel);
+  // `lastSignal` identifies what changed; `presence` is the full current roster.
+}
+```
+
+`useRealtimeQueryInvalidation` is opt-in and refetches the SDK's work-item, team, and people
+queries after matching signals. `useRealtimeChannel` exposes the connection state, latest signal,
+latest full presence roster, and a denied-channel result for custom UI. The raw client is available
+without React as `api.realtime.subscribe('team:abc', listener)`.
+
+Authorized channels are `person:<id>`, `unit:<id>`, and `team:<id>`. The client reconnects after
+transient drops and re-subscribes with the last received audit id, so the server can replay missed
+signals. A denied channel remains denied until the component subscribes again after permissions
+change.
+
+Browser WebSockets cannot attach request headers, so the access token and publishable key travel in
+the WebSocket query string. The SDK never logs that URL, but infrastructure access logs must be
+configured not to retain its query parameters.
+
 ## What's in 0.2
 
 Exactly the endpoints in `api/README.md`'s table: sign-in (PKCE redirect/popup, password via
 `api.auth.signInWithPassword` - proxied through the api so Rauthy's hosted page is never
 shown, refresh), `me`, `config`, `units`, `people`, `work-items` (list/get/create/update),
-`teams` (list/get/create/add-member/remove-member), and the typed errors in `src/errors.ts`.
+`teams` (list/get/create/add-member/remove-member), realtime signals/presence, and the typed errors
+in `src/errors.ts`.
 
 ## What's NOT in 0.2
 
-`skill/agent-knowledge.md` describes the full intended shape of this SDK, including realtime
-updates, presence, file attachments, shares and notifications. None of that exists in the api
-yet (`CLAUDE.md`'s Status section lists them under "Later"), so there's no `usePresence`,
-`api.attachments`, `api.shares` or `api.notifications` here either. Don't call them into
-existence in frontend code before they exist here: they'll be added together with the backend
-endpoints they need.
+File attachments, shares and notifications are not implemented yet. Don't call `api.attachments`,
+`api.shares` or `api.notifications` into existence in frontend code before the corresponding API
+surface exists here.
 
 ## A note on where tokens live
 
