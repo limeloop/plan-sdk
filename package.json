@@ -20,6 +20,7 @@
   "scripts": {
     "generate:types": "openapi-typescript ../api/openapi.json -o src/generated-types.ts",
     "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
